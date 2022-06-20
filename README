@@ -1,0 +1,68 @@
+Croitoru Nicolae-Valentin, 343C3
+
+Tehnologii:
+    Implementarea API-ului este in fisierul main.py din radacina temei. Pentru
+realizarea acestuia am folosit python3, impreuna cu Flask si MySQLdb.
+    Baza de date folosita a fost MySQL, iar crearea acesteia si a tabelelor se
+afla in /bd/initdb.sql.
+
+Docker:
+    - servicii:
+        - mysqldb: este serviciul pentru baza de date, plecat de la imaginea
+        mysql:5.7, pe porturile 3307:3006, am folosit un volum pentru stocarea
+        bazelor de date si unul pentru initializarea acesteia, am folosit doua
+        retele (network-api, network-db), am definit variabile de environment
+        pentru numele bazei de date, parola root-ului, numele user-ului si
+        parola (variabilele au fost mapate din fisierul .env)
+        - mysql-workbench: este serviciul de gestiune al bazelor de date,
+        plecat de la imaginea mysql-workbench, pe porturile 3000:3000, am
+        folosit reteaua network-db, am definit time zone-ul Europe/Bucharest,
+        pornirea container-ului depinde de serviciul mysqldb.
+        - meteo-service: este serviciul API de server, cu imaginea build-uita
+        local de la aplicatie, pe porturile 5000:5000, am folosit reteaua
+        network-api, am definit variabila de mediu pentru portul mysql folosit
+        (3306), pornirea container-ului depinde de serviciul mysqldb, serviciul
+        se restarteaza in continuu pana va fi up (baza de date dureaza mai mult
+        pana porneste ~ aprox 5 minute, iar serverul esueaza la prima pornire)    
+    - volumes: am folosit volumul meteo_db pentru a retine datele din baza de
+    date
+    - networks: folosesc network-api la serviciile meteo-service si mysqldb,
+    iar network-db este folosit la serviciile mysqldb si mysql-workbench.
+    - variabile de mediu: sunt definite in .env
+
+Implementare:
+    Am implementat toate rutele in afara de GET-urile de le Temeratures.
+    - Countries:
+        - post_countries: iau payload-ul, verific daca formatul cererii este 
+        corect, verific daca numele tarii nu este deja in bd, inserez noua
+        intrare;
+        - get_countries: extrag randurile din db si le adaug in lista de
+        dictionare pe care o returnez;
+        - put_countries: iau payload-ul, verific daca formatul cererii este
+        corect, tratez cazul de duplicate entry, verific daca tara exista si
+        actualizez baza de date;
+        - delete_countries: verific daca id-ul din cerere este integer, verific
+        daca id-ul tarii exista si sterg tara din baza de date.
+    - Cities:
+        - post_cities: iau payload-ul, verific daca formatul cererii este 
+        corect, verific daca numele orasului nu este deja in bd, inserez noua
+        intrare;
+        - get_cities: extrag randurile din db si le adaug in lista de
+        dictionare pe care o returnez;
+        - get_cities_by_country_id: extrag randurile cu id-ul tarii dat si le
+        adaug in lista de dictionare pe care o returnez;
+        - put_cities: iau payload-ul, verific daca formatul cererii este
+        corect, tratez cazul de duplicate entry, verific daca tara exista,
+        verific daca orasul exista si actualizez baza de date;
+        - delete_cities: verific daca id-ul din cerere este integer, verific
+        daca id-ul orasului exista si sterg orasul din baza de date.
+    - Temperatures:
+        - post_temperatures: iau payload-ul, verific daca formatul cererii este 
+        corect, verific daca id-ul orasului exista in tabela de orase, verific
+        daca orasul nu este deja in bd, inserez noua intrare;
+        - put_temperatures: iau payload-ul, verific daca formatul cererii este
+        corect, tratez cazul de duplicate entry, verific daca orasul exista,
+        verific daca id-ul temperaturii exista si actualizez baza de date;
+        - delete_temperatures: verific daca id-ul din cerere este integer,
+        verific daca id-ul temperaturii exista si sterg temperatura din baza de
+        date.

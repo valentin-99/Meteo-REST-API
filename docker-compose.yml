@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+    mysqldb:
+        image: mysql:5.7
+        ports:
+            - $MYSQLDB_LOCAL_PORT:$MYSQLDB_DOCKER_PORT
+        volumes:
+            - ./db/meteo_db:/var/lib/mysql
+            - ./db/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
+        networks:
+            - network-api
+            - network-db
+        environment:
+            MYSQL_DATABASE: $MYSQLDB_DATABASE
+            MYSQL_ROOT_PASSWORD: $MYSQLDB_ROOT_PASSWORD
+            MYSQL_USER: $MYSQLDB_USER
+            MYSQL_PASSWORD: $MYSQLDB_PASSWORD
+        env_file: ./.env
+
+    mysql-workbench:
+        image: ghcr.io/linuxserver/mysql-workbench
+        ports:
+            - $WORKBANCHDB_LOCAL_PORT:$WORKBANCHDB_DOCKER_PORT
+        env_file: ./.env
+        networks:
+            - network-db
+        environment:
+            - TZ=Europe/Bucharest
+        depends_on:
+            - mysqldb
+
+    meteo-service:
+        build: "./api"
+        restart: always
+        ports:
+            - 5000:5000
+        networks:
+            - network-api
+        environment:
+            MYSQL_PORT: 3306
+        depends_on:
+            - mysqldb
+        links:
+            - mysqldb
+
+volumes:
+    meteo_db:
+
+networks:
+    network-api:
+    network-db:
